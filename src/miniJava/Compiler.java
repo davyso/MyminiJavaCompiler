@@ -8,6 +8,8 @@ import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 
+// Designed by dhsomo
+
 public class Compiler {
 
 	public static void main(String[] args) {
