@@ -2,5 +2,5 @@
 My version of the miniJava compiler
 
 ### Versions
-PA2: Abstract Syntax Tree
+PA2: Abstract Syntax Tree\n
 PA1: Syntactic Analysis
