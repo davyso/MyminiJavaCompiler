@@ -4,6 +4,7 @@ import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
 
+// Parser
 public class Parser {
 	
 	private Scanner scanner;
@@ -194,7 +195,9 @@ public class Parser {
 					
 					if(token.kind == TokenKind.RETURN){
 						acceptIt();
-						next_expr = parseExpression();
+//						next_expr = parseExpression();
+						next_expr = parseS();
+
 						accept(TokenKind.SEMICOLON);
 					}
 					accept(TokenKind.RCURLY);
@@ -955,15 +958,18 @@ public class Parser {
 		
 		// TODO
 		// | Expression binop Expression
-		while(isBinOp(token) || token.kind == TokenKind.MINUS){
-			Token oper = token;
-//			int precedence
-			Operator op = new Operator(token);
-			acceptIt();
-			Expression tempExpr2 = parseExpression();
-			// NEW Expression: Returns BinaryExpr obj
-			tempExpr = new BinaryExpr(op, tempExpr, tempExpr2, null);
-		}
+//		while(isBinOp(token) || token.kind == TokenKind.MINUS){
+//			Token oper = token;
+////			int precedence
+//			Operator op = new Operator(token);
+//			acceptIt();
+//			
+////			Expression tempExpr2 = parseExpression();
+//			Expression tempExpr2 = parseS();
+//
+//			// NEW Expression: Returns BinaryExpr obj
+//			tempExpr = new BinaryExpr(op, tempExpr, tempExpr2, null);
+//		}
 		
 		return tempExpr;
 		
@@ -1095,13 +1101,10 @@ public class Parser {
 		else
 			parseError("expecting '" + expectedTokenKind + 
 					"' but found '" + token.kind + "'");
-		
-		
-		
-		// TODO Add this to end?
-//		while(token.kind == TokenKind.LINECOMMENT || token.kind == TokenKind.BLOCKCOMMENT){
-//			token = scanner.scan();
-//		}
+				
+		while(token.kind == TokenKind.LINECOMMENT || token.kind == TokenKind.BLOCKCOMMENT){
+			token = scanner.scan();
+		}
 
 		
 	}
@@ -1115,8 +1118,8 @@ public class Parser {
 		StackTraceElement [] stl = Thread.currentThread().getStackTrace();
 		for (int i = stl.length - 1; i>0 ; i--) {
 			// TODO Commented to get AST Display only
-//			if(stl[i].toString().contains("parse"))
-//				System.out.println(stl[i]);
+			if(stl[i].toString().contains("parse"))
+				System.out.println(stl[i]);
 		}
 		// TODO Commented to get AST Display only
 

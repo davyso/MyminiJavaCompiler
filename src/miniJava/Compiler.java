@@ -8,7 +8,7 @@ import miniJava.AbstractSyntaxTrees.AST;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 
-// Designed by dhsomo
+// Designed by dhsomo (David)
 //
 
 public class Compiler {
