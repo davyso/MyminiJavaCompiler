@@ -1,0 +1,8 @@
+======= AST Display =========================
+Package
+  ClassDeclList [1]
+  . ClassDecl
+  .   "id_0_1__" classname
+  .   FieldDeclList [0]
+  .   MethodDeclList [0]
+=============================================
