@@ -9,6 +9,7 @@ import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
 
 // Designed by dhsomo
+//
 
 public class Compiler {
 
