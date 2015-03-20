@@ -309,8 +309,9 @@ public class Parser {
 			acceptIt();
 			
 			// NEW ParameterList: Results of additional parseType added to pdl
-			String next_type_name = token.spelling;
 			Type t_next = parseType();
+			String next_type_name = token.spelling;
+
 			ParameterDecl pd_next = new ParameterDecl(t_next, next_type_name, null);
 			pdl.add(pd_next);
 			
@@ -486,8 +487,11 @@ public class Parser {
 		case ID:
 			Identifier id = new Identifier(token);
 			ClassType ct= new ClassType(id, null);
-			String var_name2 = null;
+//			String var_name2 = null;
+
 			acceptIt();
+//			String var_name2 = token.spelling;
+
 			
 			switch(token.kind){
 			case LBRACK:
@@ -498,7 +502,9 @@ public class Parser {
 					ArrayType at = new ArrayType(ct, null);
 					var_name = token.spelling;
 					accept(TokenKind.ID);
-					VarDecl vd2 = new VarDecl(at, var_name2, null);
+//					VarDecl vd2 = new VarDecl(at, var_name2, null);
+					VarDecl vd2 = new VarDecl(at, var_name, null);
+
 					accept(TokenKind.ASSIGN);
 					
 //					Expression e2 = parseExpression();
@@ -536,7 +542,7 @@ public class Parser {
 
 					}
 					else if(token.kind==TokenKind.LPAREN){
-						ExprList el1 = null;
+						ExprList el1 = new ExprList();
 						acceptIt();
 						if(token.kind == TokenKind.THIS
 						|| token.kind == TokenKind.ID
@@ -595,7 +601,10 @@ public class Parser {
 					qR = new QualifiedRef(qR, new Identifier(token), null);
 					accept(TokenKind.ID);
 				}
-				ExprList el1 = null;
+//				ExprList el1 = null;
+
+				ExprList el1 = new ExprList();
+				
 //				if(token.kind == TokenKind.LPAREN){
 //					acceptIt();
 //					if(token.kind == TokenKind.THIS
@@ -751,6 +760,8 @@ public class Parser {
 //			}
 			
 			Reference r = parseIxReference();
+			
+			
 			switch(token.kind){
 			case ASSIGN:
 				acceptIt();
@@ -865,11 +876,13 @@ public class Parser {
 //			else if(token.kind == TokenKind.LPAREN) {
 			if(token.kind == TokenKind.LPAREN) {
 	
-				ExprList el;
+				ExprList el = new ExprList();
 				acceptIt();
 				if(token.kind == TokenKind.RPAREN){
 					acceptIt();
-					el = null;
+//					el = null;
+//					el = new ExprList();
+
 					tempExpr = new CallExpr(tempRef, el, null);
 				}
 				else {
@@ -946,7 +959,15 @@ public class Parser {
 		case UNOP: case MINUS:
 			Operator op = new Operator(token);
 			acceptIt();
-			tempExpr = parseExpression();
+//			tempExpr = parseExpression();
+//			tempExpr = parseS();
+			if(token.kind==TokenKind.LPAREN){
+				tempExpr = parseS();
+			}
+			else{
+				tempExpr = parseExpression();
+			}
+			
 			// NEW Expresssion: Returns UnaryExpr obj
 //			System.out.println("hi");
 			tempExpr = new UnaryExpr(op, tempExpr, null);
@@ -995,6 +1016,8 @@ public class Parser {
 	}
 	
 	private Expression parseE(){
+//		System.out.println(token.spelling);
+
 		Expression exp = parseA();
 		while(token.kind==TokenKind.OR){
 			Operator op = new Operator(token);
@@ -1068,6 +1091,7 @@ public class Parser {
 		if(token.kind==TokenKind.LPAREN){
 			acceptIt();
 			Expression exp = parseE();
+			
 			accept(TokenKind.RPAREN);
 			return exp;
 		}
