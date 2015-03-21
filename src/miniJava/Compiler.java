@@ -46,7 +46,6 @@ public class Compiler {
 			System.exit(0);
 		}
 		
-		
 
 	}
 
