@@ -30,5 +30,6 @@ public class ClassDeclList implements Iterable<ClassDecl>
 	}
 
 	private List<ClassDecl> classDeclList;
+
 }
 

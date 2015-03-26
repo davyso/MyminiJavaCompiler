@@ -23,15 +23,19 @@ public class Parser {
 	}
 	
 	
-	public void parse() {
+	public Package parse() {
 		token = scanner.scan();
+		AST ast = null;
 		try {
 			ClassDeclList prog = parseProgram();
-			AST ast = new Package(prog, null);
+			ast = new Package(prog, null);
 			ASTDisplay ast_disp = new ASTDisplay();
 			ast_disp.showTree(ast);
 		}
 		catch (SyntaxError e) {}
+		
+		// TODO Better way? How should I handle returning null Package?
+		return (Package) ast;		
 	}
 
 	
@@ -93,7 +97,7 @@ public class Parser {
 				acceptIt();
 				t = new BaseType(TypeKind.VOID, null);
 			} else {
-				System.out.println(token.spelling);
+//				System.out.println(token.spelling);
 
 				t = parseType();
 			}
@@ -1142,8 +1146,8 @@ public class Parser {
 		StackTraceElement [] stl = Thread.currentThread().getStackTrace();
 		for (int i = stl.length - 1; i>0 ; i--) {
 			// TODO Commented to get AST Display only
-			if(stl[i].toString().contains("parse"))
-				System.out.println(stl[i]);
+//			if(stl[i].toString().contains("parse"))
+//				System.out.println(stl[i]);
 		}
 		// TODO Commented to get AST Display only
 

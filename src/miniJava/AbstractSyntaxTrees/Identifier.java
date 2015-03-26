@@ -13,10 +13,12 @@ public class Identifier extends Terminal {
 	 * declaration node of to report an error when there is no such 
 	 * declaration
 	 */
-	Declaration decl; // or method to traverse?
+	
+	public Declaration decl; // or method to traverse?
 
 	public Identifier (Token t) {
 		super (t);
+		decl = null;
 	}
 
 	public <A,R> R visit(Visitor<A,R> v, A o) {
