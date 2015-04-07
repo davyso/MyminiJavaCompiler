@@ -1,6 +1,8 @@
 package miniJava.ContextualAnalyzer;
 
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
 
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
@@ -28,17 +30,46 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitPackage(Package prog, Object arg) {
 		
+		// Quick traverse through the classes and its members
+//		prog.classDeclList
+		
+		
+		// TODO: New idea - if classes and its member are consistent through whole program
+		// then ...
+		// pre-traverse the AST and enter the classes and their members into the id table
+		// There should already by predefined Hash table for level 1 and 2
+		// Never closeScope or openScope for class decl or member decls. By doing this,
+		// they are public by default to only package. 
+		
+		// old
 		idTable.openScope();
-		
 		Iterator<ClassDecl> classDeclIterator = prog.classDeclList.iterator();
-		
 		while(classDeclIterator.hasNext()){
 			ClassDecl classDecl = classDeclIterator.next();
 			classDecl.visit(this, null);
 		}
-		
 		idTable.closeScope();
 		return null;
+		
+		
+		// new
+		
+		// traverse to gather class and member decl
+//		Iterator<ClassDecl> classDeclQuickIter = prog.classDeclList.iterator();
+//		while(classDeclQuickIter.hasNext()){
+//			ClassDecl classDecl = classDeclQuickIter.next();
+//			Queue queue = new LinkedList();
+//		}
+//		
+//		
+//		Iterator<ClassDecl> classDeclIterator = prog.classDeclList.iterator();
+//		while(classDeclIterator.hasNext()){
+//			ClassDecl classDecl = classDeclIterator.next();
+//			classDecl.visit(this, null);
+//		}
+//		return null;
+		
+		
 	}
 
 	@Override
@@ -56,11 +87,26 @@ public class Checker implements Visitor<Object, Object>{
 			fieldDecl.visit(this, null);
 		}
 		
+		// Add all methods first and then visit each method AST subtree (BFS)
 		Iterator<MethodDecl> methodDeclIterator = cd.methodDeclList.iterator();
+//		while(methodDeclIterator.hasNext()){
+//			MethodDecl methodDecl = methodDeclIterator.next();
+//			methodDecl.visit(this, null);
+//		}
+		
+		Queue<MethodDecl> methodDeclQueue = new LinkedList<MethodDecl>();
 		while(methodDeclIterator.hasNext()){
 			MethodDecl methodDecl = methodDeclIterator.next();
+			idTable.enter(methodDecl.name, methodDecl);
+			methodDeclQueue.add(methodDecl);
+//			methodDecl.visit(this, null);
+		}
+		
+		while(methodDeclQueue.peek() != null){
+			MethodDecl methodDecl = methodDeclQueue.remove();
 			methodDecl.visit(this, null);
 		}
+		
 		
 		idTable.closeScope();
 		return null;
@@ -81,7 +127,7 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Object arg) {
 		
-		idTable.enter(md.name, md);
+//		idTable.enter(md.name, md);
 		System.out.println("\tMethod Declared: " + md.name);
 		
 		// Parameters
