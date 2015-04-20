@@ -7,6 +7,7 @@ import java.util.Queue;
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.SyntacticAnalyzer.TokenKind;
 
 public class Checker implements Visitor<Object, Object>{
 	
@@ -41,13 +42,22 @@ public class Checker implements Visitor<Object, Object>{
 		// Never closeScope or openScope for class decl or member decls. By doing this,
 		// they are public by default to only package. 
 		
-		// old
+		// 
 		idTable.openScope();
 		Iterator<ClassDecl> classDeclIterator = prog.classDeclList.iterator();
+		Queue<ClassDecl> classDeclQueue = new LinkedList<ClassDecl>();
+
+		// Add all classes decls first and then visit each class AST subtree (BFS)
 		while(classDeclIterator.hasNext()){
 			ClassDecl classDecl = classDeclIterator.next();
+			idTable.enter(classDecl.name, classDecl);
+			classDeclQueue.add(classDecl);
+		}
+		while(classDeclQueue.peek() != null){
+			ClassDecl classDecl = classDeclQueue.remove();
 			classDecl.visit(this, null);
 		}
+
 		idTable.closeScope();
 		return null;
 		
@@ -75,19 +85,26 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitClassDecl(ClassDecl cd, Object arg) {
 		
-		idTable.enter(cd.name, cd);
+//		idTable.enter(cd.name, cd);
 		System.out.println("Class Declared: " + cd.name);
 		
-		// TODO
 		idTable.openScope();
 		
-		Iterator<FieldDecl> fieldDeclIterator = cd.fieldDeclList.iterator();		
+		// Add all field decls first and then visit each field AST subtree (BFS)
+
+		Iterator<FieldDecl> fieldDeclIterator = cd.fieldDeclList.iterator();	
+		Queue<FieldDecl> fieldDeclQueue = new LinkedList<FieldDecl>();
 		while(fieldDeclIterator.hasNext()){
 			FieldDecl fieldDecl = fieldDeclIterator.next();
+			idTable.enter(fieldDecl.name, fieldDecl);
+			fieldDeclQueue.add(fieldDecl);
+		}
+		while(fieldDeclQueue.peek() != null){
+			FieldDecl fieldDecl = fieldDeclQueue.remove();
 			fieldDecl.visit(this, null);
 		}
 		
-		// Add all methods first and then visit each method AST subtree (BFS)
+		// Add all methods decls first and then visit each method AST subtree (BFS)
 		Iterator<MethodDecl> methodDeclIterator = cd.methodDeclList.iterator();
 //		while(methodDeclIterator.hasNext()){
 //			MethodDecl methodDecl = methodDeclIterator.next();
@@ -117,7 +134,7 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitFieldDecl(FieldDecl fd, Object arg) {
 		
-		idTable.enter(fd.name, fd);
+//		idTable.enter(fd.name, fd);
 		System.out.println("\tField Declared: " + fd.name);
 		
 		return null;
@@ -169,7 +186,52 @@ public class Checker implements Visitor<Object, Object>{
 
 	@Override
 	public Object visitVarDecl(VarDecl decl, Object arg) {
-		// TODO Auto-generated method stub
+		
+		// INT | BOOLEAN
+		if(decl.type.typeKind == TypeKind.INT 
+				|| decl.type.typeKind == TypeKind.BOOLEAN){
+			
+			idTable.enter(decl.name, decl);
+			indentNtimes(idTable.level-1);
+			System.out.println("Statement Var Declared: " + decl.name);
+			
+		}
+		// CLASS
+		else if (decl.type.typeKind == TypeKind.CLASS){
+			String className = ((ClassType) decl.type).className.spelling;			
+			Declaration classDecl = idTable.retrieve(className);
+			if(classDecl != null){
+				idTable.enter(decl.name, decl);
+				indentNtimes(idTable.level-1);
+				System.out.println("Statement Var Declared: " + decl.name);
+			}
+				
+			// else error???
+		}
+		// ARRAY
+		else if (decl.type.typeKind == TypeKind.ARRAY){
+			Type arrType = ((ArrayType) decl.type).eltType;
+			if(arrType.typeKind == TypeKind.INT){
+				idTable.enter(decl.name, decl);
+				indentNtimes(idTable.level-1);
+				System.out.println("Statement Var[] Declared: " + decl.name);
+			}
+			else if(arrType.typeKind == TypeKind.CLASS){
+				String className = ((ClassType) arrType).className.spelling;
+				Declaration classDecl = idTable.retrieve(className);
+				if(classDecl != null){
+					idTable.enter(decl.name, decl);
+					indentNtimes(idTable.level-1);
+					System.out.println("Statement Var[] Declared: " + decl.name);
+				}
+				
+				// else error?
+			}
+			else{
+				// spit error?
+			}
+		}
+		
 		return null;
 	}
 
@@ -208,10 +270,10 @@ public class Checker implements Visitor<Object, Object>{
 	// TODO Finished? What about visitVardecl()?
 	@Override
 	public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
-		
-		idTable.enter(stmt.varDecl.name, stmt.varDecl);
-		indentNtimes(idTable.level-1);
-		System.out.println("Statement Var Declared: " + stmt.varDecl.name);
+				
+		stmt.varDecl.visit(this, null);
+		// TODO newObjExpr and newArrExpr | all other expressions
+//		stmt.initExp.visit(this, null);
 		
 		return null;
 	}
@@ -245,7 +307,11 @@ public class Checker implements Visitor<Object, Object>{
 	public Object visitIfStmt(IfStmt stmt, Object arg) {
 		
 		// TODO visit cond for type checking; must a logic expression
-		stmt.cond.visit(this, null);
+		TypeKind condType = (TypeKind) stmt.cond.visit(this, null);
+		if(condType != TypeKind.BOOLEAN){
+			reporter.reportError("Boolean expression expected here; not " + condType.name());
+			// TODO include position in error msg
+		}
 		
 		// then statement
 		idTable.openScope();
@@ -299,10 +365,27 @@ public class Checker implements Visitor<Object, Object>{
 		return null;
 	}
 
+	// TODO Only type checking
 	@Override
 	public Object visitLiteralExpr(LiteralExpr expr, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+
+        // exprType is parent (Expression) attribute 
+		TypeKind typeLitExpr = null;
+		
+		// BOOLEAN
+		if(expr.lit.kind==TokenKind.TRUE || expr.lit.kind==TokenKind.FALSE){
+			typeLitExpr = TypeKind.BOOLEAN;
+		}
+		// INT
+		else if (expr.lit.kind==TokenKind.NUM){
+			typeLitExpr = TypeKind.INT;
+		}
+		else{
+			typeLitExpr = TypeKind.ERROR;
+		}
+
+		expr.exprType = typeLitExpr; // necessary since it is the leaf?
+		return typeLitExpr;
 	}
 
 	@Override

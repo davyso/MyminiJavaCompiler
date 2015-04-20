@@ -6,12 +6,14 @@
 package miniJava.AbstractSyntaxTrees;
 
 import miniJava.SyntacticAnalyzer.SourcePosition;
+import miniJava.SyntacticAnalyzer.TokenKind;
 
 public class LiteralExpr extends Expression
 {
     public LiteralExpr(Terminal t, SourcePosition posn){
         super(t.posn);
         lit = t;
+        
     }
         
     public <A,R> R visit(Visitor<A,R> v, A o){

@@ -13,4 +13,7 @@ public abstract class Expression extends AST {
     super (posn);
   }
   
+  // Bottom Up traversal of types for checking
+  public TypeKind exprType;
+  
 }
