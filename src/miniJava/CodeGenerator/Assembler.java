@@ -1,4 +1,4 @@
-package mJAM;
+package miniJava.CodeGenerator;
 
 public class Assembler {
 	// TBD
