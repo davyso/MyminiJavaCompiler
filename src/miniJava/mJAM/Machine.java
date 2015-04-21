@@ -1,4 +1,4 @@
-package mJAM;
+package miniJava.mJAM;
 
 /**
  * Defines names and sizes of mJAM instructions and primitives

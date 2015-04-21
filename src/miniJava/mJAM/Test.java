@@ -3,10 +3,10 @@
  * @author prins
  * @version COMP 520 
  */
-package mJAM;
-import mJAM.Machine.Op;
-import mJAM.Machine.Reg;
-import mJAM.Machine.Prim;
+package miniJava.mJAM;
+import miniJava.mJAM.Machine.Op;
+import miniJava.mJAM.Machine.Reg;
+import miniJava.mJAM.Machine.Prim;
 
 // test class to construct mJAM program for miniJava example program  Counter.java
 public class Test
