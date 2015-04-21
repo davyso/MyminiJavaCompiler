@@ -53,10 +53,21 @@ public class Checker implements Visitor<Object, Object>{
 			idTable.enter(classDecl.name, classDecl);
 			classDeclQueue.add(classDecl);
 		}
+		
 		while(classDeclQueue.peek() != null){
 			ClassDecl classDecl = classDeclQueue.remove();
 			classDecl.visit(this, null);
 		}
+		
+		// Error reporting on possible duplicates
+		if(idTable.duplicateEntryExists){
+			reporter.reportError("*** Duplicate entry: " + idTable.duplicateEntryName);
+		}
+		// Error reporting on possible missing
+		if(idTable.missingEntryExists){
+			reporter.reportError("*** Missing entry: " + idTable.missingEntryName);
+		}
+
 
 		idTable.closeScope();
 		return null;
@@ -99,6 +110,13 @@ public class Checker implements Visitor<Object, Object>{
 			idTable.enter(fieldDecl.name, fieldDecl);
 			fieldDeclQueue.add(fieldDecl);
 		}
+		
+//		// Error reporting on possible duplicates
+//		if(idTable.duplicateEntryExists){
+//			reporter.reportError("*** Duplicate entry: " + idTable.duplicateEntryName);
+//		}
+		
+		
 		while(fieldDeclQueue.peek() != null){
 			FieldDecl fieldDecl = fieldDeclQueue.remove();
 			fieldDecl.visit(this, null);
@@ -119,6 +137,12 @@ public class Checker implements Visitor<Object, Object>{
 //			methodDecl.visit(this, null);
 		}
 		
+//		// Error reporting on possible duplicates
+//		if(idTable.duplicateEntryExists){
+//			reporter.reportError("*** Duplicate entry: " + idTable.duplicateEntryName);
+//		}
+
+		
 		while(methodDeclQueue.peek() != null){
 			MethodDecl methodDecl = methodDeclQueue.remove();
 			methodDecl.visit(this, null);
@@ -134,8 +158,8 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitFieldDecl(FieldDecl fd, Object arg) {
 		
-//		idTable.enter(fd.name, fd);
-		System.out.println("\tField Declared: " + fd.name);
+		idTable.enter(fd.name, fd);
+//		System.out.println("\tField Declared: " + fd.name);
 		
 		return null;
 	}
@@ -309,7 +333,7 @@ public class Checker implements Visitor<Object, Object>{
 		// TODO visit cond for type checking; must a logic expression
 		TypeKind condType = (TypeKind) stmt.cond.visit(this, null);
 		if(condType != TypeKind.BOOLEAN){
-			reporter.reportError("Boolean expression expected here; not " + condType.name());
+			reporter.reportError("*** Boolean expression expected here; not " + condType.name());
 			// TODO include position in error msg
 		}
 		

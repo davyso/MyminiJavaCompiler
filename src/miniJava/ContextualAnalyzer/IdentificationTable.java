@@ -9,12 +9,20 @@ public class IdentificationTable {
 		
 	public int level;
 	private ArrayList<HashMap<String, Declaration>> listOfHashMaps;
+	public boolean duplicateEntryExists;
+	public String duplicateEntryName;
+	public boolean missingEntryExists;
+	public String missingEntryName;
 	
 	// constructor
 	public IdentificationTable(){
 		// Make an empty id table
 		level = 0;	// outermost scope
 		listOfHashMaps = new ArrayList<HashMap<String, Declaration>>();
+		duplicateEntryExists = false;
+		duplicateEntryName = null;
+		missingEntryExists = false;
+		missingEntryName = null;
 	}
 	
 	// Call on defining occurrence of an id
@@ -37,9 +45,21 @@ public class IdentificationTable {
 
 				HashMap<String, Declaration> tempMap = listOfHashMaps.get(i);
 				if(tempMap.containsKey(id)){
-					System.err.println("***There is a duplicate of \""
-							+ id + "\" in scope " + (i+1));
+//					System.err.println("***There is a duplicate of \""
+//							+ id + "\" in scope " + (i+1));
+					duplicateEntryExists = true;
+					duplicateEntryName = id;
 				}
+			}
+		}
+		// Duplicate checking for levels < 3
+		else{
+			HashMap<String, Declaration> tempMap = listOfHashMaps.get(level-1);
+			if(tempMap.containsKey(id)){
+//				System.err.println("***There is a duplicate of \""
+//						+ id + "\" in scope " + (level+1));
+				duplicateEntryExists = true;
+				duplicateEntryName = id;
 			}
 		}
 		
@@ -66,6 +86,10 @@ public class IdentificationTable {
 		}
 
 		// TODO if entry for id not found, return an error or null?
+		
+		missingEntryExists = true;
+		missingEntryName = id;
+		
 		return null;
 	}
 	

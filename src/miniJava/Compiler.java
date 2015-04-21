@@ -41,10 +41,10 @@ public class Compiler {
 		System.out.println("Syntactic analysis ... ");
 		myAST = parser.parse();
 		System.out.println("Syntactic analysis complete:  ");
-//		if (reporter.hasErrors()) {
-//			System.out.println("INVALID arithmetic expression");
-//			System.exit(4);
-//		}
+		if (reporter.hasErrors()) {
+			System.out.println("INVALID arithmetic expression");
+			System.exit(4);
+		}
 //		else {
 //			System.out.println("valid arithmetic expression");
 //			System.exit(0);
