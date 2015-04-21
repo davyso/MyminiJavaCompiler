@@ -1,4 +1,4 @@
-package miniJava.mJAM;
+package mJAM;
 
 public class Assembler {
 	// TBD

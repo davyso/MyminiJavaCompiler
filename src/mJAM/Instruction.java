@@ -3,7 +3,7 @@
  * @author prins
  * @version COMP 520 V2.2
  */
-package miniJava.mJAM;
+package mJAM;
 
 public class Instruction {
 

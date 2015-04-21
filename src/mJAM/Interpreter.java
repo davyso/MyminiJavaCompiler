@@ -3,7 +3,7 @@
  * @author prins
  * @version COMP 520 V2.2
  */
-package miniJava.mJAM;
+package mJAM;
 
 import java.io.BufferedReader;
 import java.io.File;
