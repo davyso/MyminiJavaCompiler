@@ -6,7 +6,9 @@ JC = javac
 
 CLASSES = \
 	miniJava/Compiler.java \
-	tester/Checkpoint3.java
+	tester/Checkpoint3.java \
+	mJAM/Interpreter.java \
+	mJAM/Disassembler.java
 
 default: classes
 
@@ -18,3 +20,4 @@ clean:
 	$(RM) miniJava/ContextualAnalyzer/*.class
 	$(RM) miniJava/SyntacticAnalyzer/*.class
 	$(RM) tester/*.class
+	$(RM) mJAM/*.class

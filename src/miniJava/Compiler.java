@@ -4,7 +4,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 
+import mJAM.ObjectFile;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.CodeGenerator.Encoder;
 import miniJava.ContextualAnalyzer.Checker;
 import miniJava.SyntacticAnalyzer.Parser;
 import miniJava.SyntacticAnalyzer.Scanner;
@@ -51,16 +53,20 @@ public class Compiler {
 //		}
 
 		
-		// Contextual Analysis
-		Checker contxtChecker = new Checker(reporter);
-
-		System.out.println("Contextual analysis ... ");
-		contxtChecker.check(myAST);
-		System.out.println("Contextual analysis complete:  ");
+		// Contextual Analysis TODO: Omitted in order to work on code generation
+//		Checker contxtChecker = new Checker(reporter);
+//
+//		System.out.println("Contextual analysis ... ");
+//		contxtChecker.check(myAST);
+//		System.out.println("Contextual analysis complete:  ");
+		
+		Encoder encoder = new Encoder();
+		encoder.encode(myAST);
+		ObjectFile obj_f = new ObjectFile("foo.mJAM");
+		obj_f.write();
 		
 		
-		
-		// *** TODO Change this error handling??? ***
+		// *** Change this error handling??? ***
 		if (reporter.hasErrors()) {
 			System.out.println("INVALID arithmetic expression");
 			System.exit(4);
