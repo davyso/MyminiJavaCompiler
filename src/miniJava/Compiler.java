@@ -54,11 +54,11 @@ public class Compiler {
 
 		
 		// Contextual Analysis TODO: Omitted in order to work on code generation
-//		Checker contxtChecker = new Checker(reporter);
-//
-//		System.out.println("Contextual analysis ... ");
-//		contxtChecker.check(myAST);
-//		System.out.println("Contextual analysis complete:  ");
+		Checker contxtChecker = new Checker(reporter);
+
+		System.out.println("Contextual analysis ... ");
+		contxtChecker.check(myAST);
+		System.out.println("Contextual analysis complete:  ");
 		
 		Encoder encoder = new Encoder();
 		encoder.encode(myAST);

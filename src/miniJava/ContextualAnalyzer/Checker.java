@@ -7,16 +7,19 @@ import java.util.Queue;
 import miniJava.ErrorReporter;
 import miniJava.AbstractSyntaxTrees.*;
 import miniJava.AbstractSyntaxTrees.Package;
+import miniJava.SyntacticAnalyzer.Token;
 import miniJava.SyntacticAnalyzer.TokenKind;
 
 public class Checker implements Visitor<Object, Object>{
 	
 	private IdentificationTable idTable;
 	private ErrorReporter reporter;
+	private int numOfMainMethod;
 	
 	public Checker(ErrorReporter reporter){
 		this.reporter = reporter;
 		this.idTable = new IdentificationTable();
+		this.numOfMainMethod = 0;
 		//establishStdEnvironment()?
 	}
 	
@@ -68,6 +71,10 @@ public class Checker implements Visitor<Object, Object>{
 			reporter.reportError("*** Missing entry: " + idTable.missingEntryName);
 		}
 
+		if(numOfMainMethod == 0) 
+			reporter.reportError("*** Sourcefile lacks as suitable main method");
+		if(numOfMainMethod > 1)
+			reporter.reportError("*** Sourcefule has more than one sutiable main method");
 
 		idTable.closeScope();
 		return null;
@@ -130,11 +137,52 @@ public class Checker implements Visitor<Object, Object>{
 //		}
 		
 		Queue<MethodDecl> methodDeclQueue = new LinkedList<MethodDecl>();
-		while(methodDeclIterator.hasNext()){
-			MethodDecl methodDecl = methodDeclIterator.next();
+//		while(methodDeclIterator.hasNext()){
+//			MethodDecl methodDecl = methodDeclIterator.next();
+//			idTable.enter(methodDecl.name, methodDecl);
+//			methodDeclQueue.add(methodDecl);
+////			methodDecl.visit(this, null);
+//		}
+//		boolean noMainMethod = true;
+		for(MethodDecl methodDecl : cd.methodDeclList){
 			idTable.enter(methodDecl.name, methodDecl);
+			
+//			System.out.println(methodDecl.name.equals("main"));
+			if(methodDecl.name.equals("main")) {
+				numOfMainMethod++;
+				
+//				System.out.println(methodDecl.type.typeKind);
+				
+				if(methodDecl.isPrivate){
+					reporter.reportError("*** Sourcefile lacks a suitable main method: should be public");
+				}
+				if(!methodDecl.isStatic){
+					reporter.reportError("*** Sourcefile lacks a suitable main method: should be static");
+				}
+				if(methodDecl.parameterDeclList.size() != 1){
+					reporter.reportError("*** Sourcefile lacks a sutiable main method: should only have one arg");
+				}
+				if(methodDecl.type.typeKind != TypeKind.VOID){
+					reporter.reportError("*** Sourcefule lacks a stuiable main method: should by type void");
+				}
+				else{
+					ArrayType mainArgType = new ArrayType(new ClassType(
+							new Identifier(new Token(TokenKind.CLASS, "String")), null), null);
+////					System.out.println(((ArrayType)methodDecl.parameterDeclList.get(0).type).equals(mainArgType));
+//					System.out.println(((ClassType)((ArrayType)methodDecl.parameterDeclList.get(0).type).eltType).className.spelling.equals("String"));
+					boolean isMainArgTypeString = ((ClassType)((ArrayType)methodDecl.parameterDeclList.get(0).type).eltType).className.spelling.equals("String");
+
+//					if(!(methodDecl.parameterDeclList.get(0).type.equals(mainArgType))){
+					if(!isMainArgTypeString){
+
+						reporter.reportError("*** Sourcefile lacks a suitable main method: should only have 'String[] args' as arg");
+					}
+				}
+				
+			}
+//				System.out.println("hello");
+			
 			methodDeclQueue.add(methodDecl);
-//			methodDecl.visit(this, null);
 		}
 		
 //		// Error reporting on possible duplicates
@@ -158,8 +206,19 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitFieldDecl(FieldDecl fd, Object arg) {
 		
-		idTable.enter(fd.name, fd);
+//		idTable.enter(fd.name, fd);
 //		System.out.println("\tField Declared: " + fd.name);
+		
+		if(fd.type instanceof ClassType){
+			ClassType fieldType = (ClassType) fd.type;
+			if(fieldType.className.decl == null){
+				reporter.reportError("*** Undeclared class " + fieldType.className.spelling);
+			}
+		}
+		if(fd.type.typeKind == TypeKind.VOID){
+			// TODO: Parse error, not contextual analysis error
+			reporter.reportError("*** Incorrect Type (void) for a field");
+		}
 		
 		return null;
 	}
@@ -173,10 +232,13 @@ public class Checker implements Visitor<Object, Object>{
 		
 		// Parameters
 		idTable.openScope();
-		Iterator<ParameterDecl> parameterDeclIterator = md.parameterDeclList.iterator();
-		while(parameterDeclIterator.hasNext()){
-			ParameterDecl parameterDecl = parameterDeclIterator.next();
-			parameterDecl.visit(this, null);
+//		Iterator<ParameterDecl> parameterDeclIterator = md.parameterDeclList.iterator();
+//		while(parameterDeclIterator.hasNext()){
+//			ParameterDecl parameterDecl = parameterDeclIterator.next();
+//			parameterDecl.visit(this, null);
+//		}
+		for(ParameterDecl paramDecl : md.parameterDeclList){
+			paramDecl.visit(this, null);
 		}
 		
 		
@@ -203,6 +265,12 @@ public class Checker implements Visitor<Object, Object>{
 	public Object visitParameterDecl(ParameterDecl pd, Object arg) {
 		
 		idTable.enter(pd.name, pd);
+		if(pd.type instanceof ClassType){
+			ClassType paramType = (ClassType) pd.type;
+			if(paramType.className.decl == null){
+				reporter.reportError("*** Undeclared class " + paramType.className.spelling);
+			}
+		}
 		System.out.println("\t\tParameter Declared: " + pd.name);
 		
 		return null;
@@ -210,6 +278,8 @@ public class Checker implements Visitor<Object, Object>{
 
 	@Override
 	public Object visitVarDecl(VarDecl decl, Object arg) {
+		
+		idTable.enter(decl.name, decl);
 		
 		// INT | BOOLEAN
 		if(decl.type.typeKind == TypeKind.INT 
@@ -313,8 +383,8 @@ public class Checker implements Visitor<Object, Object>{
 	public Object visitCallStmt(CallStmt stmt, Object arg) {
 
 		Declaration decl = (Declaration) stmt.methodRef.visit(this, null);
-		indentNtimes(idTable.level-1);
-		System.out.println("Applied Occur.: " + decl.name);
+//		indentNtimes(idTable.level-1);
+//		System.out.println("Applied Occur.: " + decl.name);
 		
 		// ExprList; make sure that the placements of args correspond the datatypes
 		// Use for type checking
@@ -333,7 +403,7 @@ public class Checker implements Visitor<Object, Object>{
 		// TODO visit cond for type checking; must a logic expression
 		TypeKind condType = (TypeKind) stmt.cond.visit(this, null);
 		if(condType != TypeKind.BOOLEAN){
-			reporter.reportError("*** Boolean expression expected here; not " + condType.name());
+			reporter.reportError("*** Boolean expression expected in if stmt");
 			// TODO include position in error msg
 		}
 		
@@ -345,6 +415,10 @@ public class Checker implements Visitor<Object, Object>{
 		// else statement
 		if(stmt.elseStmt != null){
 			idTable.openScope();
+			System.out.println(stmt.elseStmt);
+			if(stmt.elseStmt instanceof VarDeclStmt){
+				reporter.reportError("*** Variable declaration not permitted in else stmt");
+			}
 			stmt.elseStmt.visit(this, null);
 			idTable.closeScope();
 		}
@@ -426,7 +500,9 @@ public class Checker implements Visitor<Object, Object>{
 
 	@Override
 	public Object visitQualifiedRef(QualifiedRef ref, Object arg) {
-		// TODO Auto-generated method stub
+		ref.ref.visit(this, null);
+		ref.id.visit(this, null);
+		
 		return null;
 	}
 
@@ -441,10 +517,14 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitIdRef(IdRef ref, Object arg) {
 		Declaration decl = idTable.retrieve(ref.id.spelling);
+//		System.out.println(decl);
 		if(decl != null){
 			ref.id.decl = decl;
+			return decl;
 		}
-		return decl;
+		
+		reporter.reportError("*** Reference not declared");
+		return null;
 	}
 
 	@Override
@@ -455,7 +535,11 @@ public class Checker implements Visitor<Object, Object>{
 
 	@Override
 	public Object visitIdentifier(Identifier id, Object arg) {
-		// TODO Auto-generated method stub
+		Declaration decl = id.decl;
+//		System.out.println(decl);
+		if(decl == null){
+			reporter.reportError("*** Id not declared");
+		}
 		return null;
 	}
 

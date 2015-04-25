@@ -56,6 +56,7 @@ public class IdentificationTable {
 		else{
 			HashMap<String, Declaration> tempMap = listOfHashMaps.get(level-1);
 			if(tempMap.containsKey(id)){
+//				System.out.println(tempMap.get(id));
 //				System.err.println("***There is a duplicate of \""
 //						+ id + "\" in scope " + (level+1));
 				duplicateEntryExists = true;

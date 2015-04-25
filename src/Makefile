@@ -19,5 +19,6 @@ clean:
 	$(RM) miniJava/AbstractSyntaxTrees/*.class
 	$(RM) miniJava/ContextualAnalyzer/*.class
 	$(RM) miniJava/SyntacticAnalyzer/*.class
+	$(RM) miniJava/CodeGenerator/*.class
 	$(RM) tester/*.class
 	$(RM) mJAM/*.class

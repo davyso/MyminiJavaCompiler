@@ -197,12 +197,16 @@ public class Encoder implements Visitor<Object, Object>{
 	@Override
 	public Object visitCallStmt(CallStmt stmt, Object arg) {
 		// TODO For now, use only for PRINT statement
+		
+		
 		if(stmt.argList.size() == 1 /*and it is a print SysOut stmt*/){
 //			Machine.emit(LOADL, stmt.argList.);
 			
 			
 //			if(((RefExpr) stmt.argList.get(0)).ref instanceof IdRef){
 //				Identifier id = ((IdRef) ((RefExpr) stmt.argList.get(0)).ref).id;
+				
+				stmt.argList.get(0).visit(this, null);
 				Machine.emit(Op.LOAD, Reg.LB, 3);
 				Machine.emit(Prim.putintnl);
 //			}
