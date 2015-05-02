@@ -27,10 +27,6 @@ public class Checker implements Visitor<Object, Object>{
 		ast.visit(this, null);
 	}
 	
-	public void hell(ErrorReporter reporter){
-		
-	}
-
 	@Override
 	public Object visitPackage(Package prog, Object arg) {
 		
@@ -47,13 +43,19 @@ public class Checker implements Visitor<Object, Object>{
 		
 		// 
 		idTable.openScope();
-		Iterator<ClassDecl> classDeclIterator = prog.classDeclList.iterator();
+//		Iterator<ClassDecl> classDeclIterator = prog.classDeclList.iterator();
 		Queue<ClassDecl> classDeclQueue = new LinkedList<ClassDecl>();
 
 		// Add all classes decls first and then visit each class AST subtree (BFS)
-		while(classDeclIterator.hasNext()){
-			ClassDecl classDecl = classDeclIterator.next();
+//		while(classDeclIterator.hasNext()){
+//			ClassDecl classDecl = classDeclIterator.next();
+//			idTable.enter(classDecl.name, classDecl);
+//			classDeclQueue.add(classDecl);
+//		}
+		
+		for(ClassDecl classDecl : prog.classDeclList){
 			idTable.enter(classDecl.name, classDecl);
+//			classDecl.
 			classDeclQueue.add(classDecl);
 		}
 		
@@ -210,7 +212,9 @@ public class Checker implements Visitor<Object, Object>{
 //		System.out.println("\tField Declared: " + fd.name);
 		
 		if(fd.type instanceof ClassType){
+			
 			ClassType fieldType = (ClassType) fd.type;
+			fieldType.className.decl = idTable.retrieve(fieldType.className.spelling);
 			if(fieldType.className.decl == null){
 				reporter.reportError("*** Undeclared class " + fieldType.className.spelling);
 			}
@@ -227,16 +231,17 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitMethodDecl(MethodDecl md, Object arg) {
 		
-//		idTable.enter(md.name, md);
-		System.out.println("\tMethod Declared: " + md.name);
+		boolean isVoid = (md.type.typeKind == TypeKind.VOID);
+		if(isVoid && md.returnExp != null){
+			reporter.reportError("*** Void method shouldn't have return statement");
+		}
+		if(!isVoid && md.returnExp == null){
+			reporter.reportError("*** Non-void method should have return statement");
+		}
+		
 		
 		// Parameters
 		idTable.openScope();
-//		Iterator<ParameterDecl> parameterDeclIterator = md.parameterDeclList.iterator();
-//		while(parameterDeclIterator.hasNext()){
-//			ParameterDecl parameterDecl = parameterDeclIterator.next();
-//			parameterDecl.visit(this, null);
-//		}
 		for(ParameterDecl paramDecl : md.parameterDeclList){
 			paramDecl.visit(this, null);
 		}
@@ -255,7 +260,6 @@ public class Checker implements Visitor<Object, Object>{
 		// Maybe need this stuff for typechecking with return statement
 //		md.returnExp;
 		
-		
 		idTable.closeScope();
 		return null;
 	}
@@ -264,13 +268,21 @@ public class Checker implements Visitor<Object, Object>{
 	// TODO Finished?
 	public Object visitParameterDecl(ParameterDecl pd, Object arg) {
 		
-		idTable.enter(pd.name, pd);
+//		idTable.enter(pd.name, pd);
 		if(pd.type instanceof ClassType){
 			ClassType paramType = (ClassType) pd.type;
+//			paramType.className.decl = idTable.retrieve(paramType.className.spelling);
+			paramType.className.decl = null;
+
+			if(idTable.retrieve(paramType.className.spelling) instanceof ClassDecl){
+				paramType.className.decl = idTable.retrieve(paramType.className.spelling);
+			}
 			if(paramType.className.decl == null){
 				reporter.reportError("*** Undeclared class " + paramType.className.spelling);
 			}
 		}
+		idTable.enter(pd.name, pd);
+
 		System.out.println("\t\tParameter Declared: " + pd.name);
 		
 		return null;
@@ -279,13 +291,15 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitVarDecl(VarDecl decl, Object arg) {
 		
+		Type declType = null;
+		
 		idTable.enter(decl.name, decl);
 		
 		// INT | BOOLEAN
 		if(decl.type.typeKind == TypeKind.INT 
 				|| decl.type.typeKind == TypeKind.BOOLEAN){
 			
-			idTable.enter(decl.name, decl);
+//			idTable.enter(decl.name, decl);
 			indentNtimes(idTable.level-1);
 			System.out.println("Statement Var Declared: " + decl.name);
 			
@@ -295,7 +309,7 @@ public class Checker implements Visitor<Object, Object>{
 			String className = ((ClassType) decl.type).className.spelling;			
 			Declaration classDecl = idTable.retrieve(className);
 			if(classDecl != null){
-				idTable.enter(decl.name, decl);
+//				idTable.enter(decl.name, decl);
 				indentNtimes(idTable.level-1);
 				System.out.println("Statement Var Declared: " + decl.name);
 			}
@@ -306,7 +320,7 @@ public class Checker implements Visitor<Object, Object>{
 		else if (decl.type.typeKind == TypeKind.ARRAY){
 			Type arrType = ((ArrayType) decl.type).eltType;
 			if(arrType.typeKind == TypeKind.INT){
-				idTable.enter(decl.name, decl);
+//				idTable.enter(decl.name, decl);
 				indentNtimes(idTable.level-1);
 				System.out.println("Statement Var[] Declared: " + decl.name);
 			}
@@ -314,7 +328,7 @@ public class Checker implements Visitor<Object, Object>{
 				String className = ((ClassType) arrType).className.spelling;
 				Declaration classDecl = idTable.retrieve(className);
 				if(classDecl != null){
-					idTable.enter(decl.name, decl);
+//					idTable.enter(decl.name, decl);
 					indentNtimes(idTable.level-1);
 					System.out.println("Statement Var[] Declared: " + decl.name);
 				}
@@ -326,7 +340,7 @@ public class Checker implements Visitor<Object, Object>{
 			}
 		}
 		
-		return null;
+		return decl.type;
 	}
 
 	@Override
@@ -364,17 +378,37 @@ public class Checker implements Visitor<Object, Object>{
 	// TODO Finished? What about visitVardecl()?
 	@Override
 	public Object visitVardeclStmt(VarDeclStmt stmt, Object arg) {
-				
-		stmt.varDecl.visit(this, null);
+		
+		String localDeclName = stmt.varDecl.name;
+		Type stmtVarDeclType = (Type) stmt.varDecl.visit(this, null);
 		// TODO newObjExpr and newArrExpr | all other expressions
-//		stmt.initExp.visit(this, null);
+		Object stmtExprType = stmt.initExp.visit(this, localDeclName);
+		
+		if(stmtVarDeclType instanceof ClassType && stmtExprType instanceof ClassType){
+			Identifier varDeclId = ((ClassType) stmtVarDeclType).className;
+			Identifier exprId = ((ClassType) stmtExprType).className;
+
+			if(!varDeclId.equals(exprId)){
+				reporter.reportError("Variable declaration imcompatible with initial value type");
+			}
+		}
 		
 		return null;
 	}
 
 	@Override
 	public Object visitAssignStmt(AssignStmt stmt, Object arg) {
-		// TODO Auto-generated method stub
+		if(stmt.ref.decl == null){
+			reporter.reportError("*** Stmt ref is not declared");
+		}
+		if(stmt.ref.decl instanceof MethodDecl){
+			reporter.reportError("*** Cannot assign value to methods");
+		}
+//		TypeKind stmtRefType = (TypeKind) stmt.ref.visit(this, null);
+		Type stmtExprType = (Type) stmt.val.visit(this, null);
+		
+		// TODO
+		
 		return null;
 	}
 
@@ -417,7 +451,7 @@ public class Checker implements Visitor<Object, Object>{
 			idTable.openScope();
 			System.out.println(stmt.elseStmt);
 			if(stmt.elseStmt instanceof VarDeclStmt){
-				reporter.reportError("*** Variable declaration not permitted in else stmt");
+				reporter.reportError("*** Variable declaration not permitted in single line else stmt");
 			}
 			stmt.elseStmt.visit(this, null);
 			idTable.closeScope();
@@ -431,10 +465,14 @@ public class Checker implements Visitor<Object, Object>{
 		
 		// TODO visit cond for type checking; must a logic expression
 		stmt.cond.visit(this, null);
-		
+				
+		if(stmt.body instanceof VarDeclStmt){
+			reporter.reportError("*** Variable declaration not permitted in single line while stmt");
+		}
 		idTable.openScope();		
 		stmt.body.visit(this, null); // Statement
 		idTable.closeScope();
+
 		
 		return null;
 	}
@@ -447,13 +485,164 @@ public class Checker implements Visitor<Object, Object>{
 
 	@Override
 	public Object visitBinaryExpr(BinaryExpr expr, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		
+		Type l_type = (Type) expr.left.visit(this, null);
+		Type r_type = (Type) expr.right.visit(this, null);
+//		TypeKind leftTypeKind = null;
+//		TypeKind rightTypeKind = null;
+		
+		if(l_type == null || r_type == null){
+			reporter.reportError("*** Type can't be determined because ref wasn't declared");
+			return new BaseType(TypeKind.ERROR, null);
+		}
+		if(l_type.typeKind == TypeKind.ERROR || r_type.typeKind == TypeKind.ERROR){
+			return new BaseType(TypeKind.ERROR, null);
+		}
+
+		
+//		if(expr.left.visit(this, null) instanceof Type && expr.right.visit(this, null) instanceof Type){
+//			l_type = (Type) expr.left.visit(this, arg);
+//			r_type = (Type) expr.right.visit(this, arg);
+//			leftTypeKind = l_type.typeKind;
+//			rightTypeKind = r_type.typeKind;
+//		}
+//		else{
+//			leftTypeKind = (TypeKind) expr.left.visit(this, null);
+//			rightTypeKind = (TypeKind) expr.right.visit(this, null);
+//		}
+		
+//		if(!leftTypeKind.equals(rightTypeKind)){
+//			reporter.reportError("*** Left and right expressions aren't of same typekind");
+//		}
+		
+		if(!l_type.equals(r_type)){
+			reporter.reportError("*** Both expressions aren't of the same type");
+			return new BaseType(TypeKind.ERROR, null);
+		}
+		if(l_type instanceof ClassType && r_type instanceof ClassType){
+			if(((ClassType) l_type).className.equals(((ClassType) r_type).className)){
+				reporter.reportError("*** Even though both expr are class types, they aren't same Ids");
+				return new BaseType(TypeKind.ERROR, null);
+			}
+		}
+		if(l_type instanceof BaseType && r_type instanceof BaseType){
+			if(l_type.typeKind != r_type.typeKind){
+				reporter.reportError("*** Even though both expr are base types, they aren't same typekinds");
+				return new BaseType(TypeKind.ERROR, null);
+			}
+		}
+
+		
+		Type resultType = null;
+//		if(leftTypeKind == TypeKind.ERROR || rightTypeKind == TypeKind.ERROR){
+//			return TypeKind.ERROR;
+//		}
+//		
+//		if(leftTypeKind != TypeKind.BOOLEAN || leftTypeKind != TypeKind.INT || leftTypeKind != TypeKind.CLASS
+//			|| rightTypeKind != TypeKind.BOOLEAN || rightTypeKind != TypeKind.INT || rightTypeKind != TypeKind.CLASS){
+//			reporter.reportError("*** Expressions aren't base types or class types");
+//		}
+		
+		
+		
+		switch(expr.operator.kind){
+				
+					
+		// Unique to int
+		case PLUS:	case MINUS:
+		case TIMES:	case DIVIDE:
+		case LT:	case GT:
+		case LTEQ:	case GTEQ:
+						
+//			if((leftTypeKind == TypeKind.INT) && (rightTypeKind == TypeKind.INT)){
+//				return TypeKind.INT;
+//			}
+//			else
+//				return TypeKind.ERROR;
+			if((l_type.typeKind == TypeKind.INT) && (r_type.typeKind == TypeKind.INT)){
+				return TypeKind.INT;
+			}
+			else
+				return TypeKind.ERROR;
+
+			
+		// Used for int and boolean
+		case AND:	case OR:
+						
+//			if((leftTypeKind == TypeKind.INT) && (rightTypeKind == TypeKind.INT)){
+//				return TypeKind.INT;
+//			}
+//			else if((leftTypeKind == TypeKind.BOOLEAN) && (rightTypeKind == TypeKind.BOOLEAN)){
+//				return TypeKind.BOOLEAN;
+//			}
+//			else
+//				return TypeKind.ERROR;
+			if((l_type.typeKind == TypeKind.INT) && (r_type.typeKind == TypeKind.INT)){
+				return TypeKind.INT;
+			}
+			else if((l_type.typeKind == TypeKind.BOOLEAN) && (r_type.typeKind == TypeKind.BOOLEAN)){
+				return TypeKind.BOOLEAN;
+			}
+			else
+				return TypeKind.ERROR;
+
+		
+		// Used for int, boolean and classes
+		case EQUAL:	case NOTEQUAL:
+//			if((leftTypeKind == TypeKind.INT) && (rightTypeKind == TypeKind.INT)){
+//				return TypeKind.INT;
+//			}
+//			else if((leftTypeKind == TypeKind.BOOLEAN) && (rightTypeKind == TypeKind.BOOLEAN)){
+//				return TypeKind.BOOLEAN;
+//			}
+//			else if((leftTypeKind == TypeKind.CLASS) && (rightTypeKind == TypeKind.CLASS)){
+//				Identifier leftId = ((ClassType) l_type).className;
+//				Identifier rightId = ((ClassType) r_type).className;
+//				
+//				if(!leftId.equals(rightId)){
+//					reporter.reportError("*** Left and right expressions aren't same class type");
+//				}
+//
+//			}
+//			else
+//				return TypeKind.ERROR;
+			if((l_type.typeKind == TypeKind.INT) && (r_type.typeKind == TypeKind.INT)){
+				return new BaseType(TypeKind.INT, null);
+			}
+			else if((l_type.typeKind == TypeKind.BOOLEAN) && (r_type.typeKind == TypeKind.BOOLEAN)){
+				return new BaseType(TypeKind.BOOLEAN, null);
+			}
+			else if((l_type.typeKind == TypeKind.CLASS) && (r_type.typeKind == TypeKind.CLASS)){
+				Identifier leftId = ((ClassType) l_type).className;
+				Identifier rightId = ((ClassType) r_type).className;
+				
+				if(!leftId.equals(rightId)){
+					reporter.reportError("*** Left and right expressions aren't same class type");
+					return new BaseType(TypeKind.ERROR, null);
+				}
+				return new ClassType(leftId, null);
+
+			}
+			else
+				return new BaseType(TypeKind.ERROR, null);
+
+		}
+		
+		return resultType;
 	}
 
 	@Override
 	public Object visitRefExpr(RefExpr expr, Object arg) {
-		// TODO Auto-generated method stub
+//		expr.ref.visit(this, arg);
+//		Type exprType = (Type) expr.ref.visit(this, null);
+//		if(expr.ref.visit(this,null) instanceof Type){
+//			
+//		}
+		
+//		return expr.ref.visit(this, null);
+		if(expr.ref.decl != null){
+			return expr.ref.decl.type;
+		}
 		return null;
 	}
 
@@ -467,29 +656,37 @@ public class Checker implements Visitor<Object, Object>{
 	@Override
 	public Object visitLiteralExpr(LiteralExpr expr, Object arg) {
 
+	
+		
         // exprType is parent (Expression) attribute 
-		TypeKind typeLitExpr = null;
+		Type typeLitExpr = null;
 		
 		// BOOLEAN
 		if(expr.lit.kind==TokenKind.TRUE || expr.lit.kind==TokenKind.FALSE){
-			typeLitExpr = TypeKind.BOOLEAN;
+//			typeLitExpr = TypeKind.BOOLEAN;
+			typeLitExpr = new BaseType(TypeKind.BOOLEAN, null);
 		}
 		// INT
 		else if (expr.lit.kind==TokenKind.NUM){
-			typeLitExpr = TypeKind.INT;
+//			typeLitExpr = TypeKind.INT;
+			typeLitExpr = new BaseType(TypeKind.INT, null);
+
 		}
 		else{
-			typeLitExpr = TypeKind.ERROR;
+//			typeLitExpr = TypeKind.ERROR;
+			typeLitExpr = new BaseType(TypeKind.ERROR, null);
 		}
 
-		expr.exprType = typeLitExpr; // necessary since it is the leaf?
+//		expr.exprType = typeLitExpr; // necessary since it is the leaf?
 		return typeLitExpr;
+		
+		
+		
 	}
 
 	@Override
 	public Object visitNewObjectExpr(NewObjectExpr expr, Object arg) {
-		// TODO Auto-generated method stub
-		return null;
+		return expr.classtype;
 	}
 
 	@Override
@@ -516,15 +713,26 @@ public class Checker implements Visitor<Object, Object>{
 	// If not null, it will update the decl field of the identifier
 	@Override
 	public Object visitIdRef(IdRef ref, Object arg) {
+		
+		if(arg != null){
+			if(((String) arg).equals(ref.id.spelling)){
+				reporter.reportError("*** Variable declaration cannot reference variable being declared");
+			}
+		}
+		
 		Declaration decl = idTable.retrieve(ref.id.spelling);
+//		System.out.println(decl.name);
 //		System.out.println(decl);
 		if(decl != null){
 			ref.id.decl = decl;
-			return decl;
+			return decl.type;
 		}
 		
 		reporter.reportError("*** Reference not declared");
-		return null;
+		return TypeKind.ERROR;
+		
+		
+		
 	}
 
 	@Override
@@ -540,24 +748,21 @@ public class Checker implements Visitor<Object, Object>{
 		if(decl == null){
 			reporter.reportError("*** Id not declared");
 		}
-		return null;
+		return id.decl;
 	}
 
 	@Override
 	public Object visitOperator(Operator op, Object arg) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visitIntLiteral(IntLiteral num, Object arg) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public Object visitBooleanLiteral(BooleanLiteral bool, Object arg) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
